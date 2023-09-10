@@ -1,1 +1,1 @@
-HELLO
+Ensemble des projets réalisés dans le cadre de ma formation en Informatique + Projets personels lié à la Data
