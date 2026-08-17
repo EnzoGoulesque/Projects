@@ -1,9 +1,13 @@
-# Handoff — État actuel du projet
+# Handoff — État actuel
 
 ## Projet
-**Nom :** Projet Architecture de données
 
-## Objectif
+Projet Architecture de données.
+
+## Vision courte
+
+Construire un laboratoire :
+
 ```text
 CSV / Parquet
     ↓
@@ -16,33 +20,61 @@ marts / sources BI
 Tableau Desktop
 ```
 
-## État technique
-- Windows 11 : prêt
-- WSL2 : fonctionnel
-- Ubuntu 24.04 LTS : fonctionnel
-- VS Code ↔ WSL : fonctionnel
-- Git : fonctionnel
-- GitHub : fonctionnel
-- SSH GitHub : validé
-- Repository `Projects` : présent sous `/home/enzo/projects`
+## Environnement prêt
 
-## Priorité actuelle
-1. Versionner cette mémoire.
-2. Démarrer Snowflake par les fondamentaux.
-3. Mettre en place les protections de coût.
-4. Charger un petit dataset.
-5. Passer ensuite à dbt.
+- Windows 11
+- WSL2
+- Ubuntu 24.04
+- VS Code ↔ WSL
+- Git
+- GitHub
+- SSH GitHub
+- repository `Projects`
 
-## Décisions à respecter
-- Ne pas recréer Snowflake localement.
-- Ne pas prioriser PostgreSQL.
-- Ne pas installer Docker ou Airflow sans besoin concret.
-- Signaler explicitement tout risque de coût Snowflake avant une action consommatrice.
-- Conserver les secrets hors de GitHub.
+## État actuel
 
-## Ordre de lecture
-1. `CONTEXT.md`
-2. `ARCHITECTURE.md`
-3. `ROADMAP.md`
-4. `DECISIONS.md`
-5. `LEARNINGS.md`
+Le socle technique du PC et GitHub est terminé.
+
+Le système de mémoire du projet est en cours de consolidation dans une version simplifiée.
+
+## Prochaine étape fonctionnelle
+
+Snowflake.
+
+Avant tout run :
+- comprendre les warehouses ;
+- comprendre la consommation ;
+- configurer les protections de coût ;
+- utiliser de très faibles volumes.
+
+## Priorités
+
+1. Snowflake suffisamment maîtrisé pour travailler en sécurité.
+2. dbt en profondeur.
+3. Conception de marts adaptés à la BI.
+4. Tableau Desktop.
+
+## Non prioritaire
+
+- PostgreSQL
+- Docker
+- Airflow
+- Tableau Cloud
+- IA locale
+
+## Contraintes
+
+- Aucun secret dans Git.
+- Aucun dataset professionnel/confidentiel dans GitHub.
+- Signaler explicitement les risques de coût Snowflake avant une action consommatrice.
+- Toute nouvelle brique doit être évaluée par son impact sur l'architecture globale.
+
+## Documents utiles
+
+- Vision et architecture : `PROJECT.md`
+- Progression : `ROADMAP.md`
+- Décisions : `DECISIONS.md`
+- Problèmes déjà rencontrés : `LEARNINGS.md`
+- Règles sécurité : `SECURITY.md`
+- Commandes : `PLAYBOOK.md`
+- Routine de travail : `SESSION_GUIDE.md`

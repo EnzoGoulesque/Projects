@@ -1,0 +1,29 @@
+# Secrets / credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+profiles.yml
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# dbt
+target/
+logs/
+dbt_packages/
+
+# Données locales / sensibles
+data/private/
+data/raw/
+
+# OS / éditeurs
+.DS_Store
+Thumbs.db

@@ -1,38 +1,109 @@
 # Apprentissages, problèmes et solutions
 
-## Environnement
-### WSL2
-Les projets Linux sont stockés sous `/home/enzo/projects`, pas sous `/mnt/c/...`.
+Ce fichier conserve uniquement les informations qui évitent de répéter une erreur ou qui apportent une compréhension durable.
 
-### VS Code
-`code .` ouvre dans VS Code le dossier courant du terminal.
+Format recommandé :
 
-### GitHub / SSH
-Connexion SSH validée avec :
+```text
+## Sujet
+
+Problème / découverte :
+...
+
+Cause / explication :
+...
+
+Solution / règle :
+...
+```
+
+---
+
+## WSL2 — emplacement des projets
+
+**Découverte**  
+Les projets Linux sont stockés sous `~/projects`.
+
+**Règle**  
+Éviter d'héberger les projets techniques principaux sous `/mnt/c/...`.
+
+---
+
+## VS Code — `code .`
+
+**Découverte**  
+La commande :
+
+```bash
+code .
+```
+
+ouvre dans VS Code le dossier courant.
+
+**Utilité**  
+Permet de lancer VS Code directement dans le bon projet WSL.
+
+---
+
+## GitHub — SSH
+
+**Découverte**  
+L'authentification SSH entre Ubuntu et GitHub est opérationnelle.
+
+Commande de vérification :
+
 ```bash
 ssh -T git@github.com
 ```
 
-## Snowflake
-Snowflake sépare conceptuellement stockage et compute.
+---
 
-### Vigilance coût
-Avant les tests :
-- utiliser le plus petit warehouse adapté ;
-- configurer l'auto-suspend ;
-- éviter du compute inutile ;
-- travailler sur de faibles volumes ;
-- mettre en place des protections de consommation.
+## Git — vérifier avant publication
 
-Les paramètres précis seront revalidés avec la documentation officielle au moment de la configuration.
+**Règle**  
+Avant un commit/push :
 
-## dbt
-```text
-dbt = organisation / génération / gouvernance du SQL
-Snowflake = stockage + exécution du SQL
+```bash
+git status
+git diff
+git diff --staged
 ```
 
-L'objectif est de comprendre le grain, les consommateurs, les matérialisations et l'impact coût/performance de chaque modèle.
+**Pourquoi**  
+Éviter de publier :
+- mauvais fichier ;
+- secret ;
+- donnée sensible ;
+- modification non souhaitée ;
+- modification d'un autre projet.
 
-## Tableau
-Les marts doivent fournir des dimensions et mesures claires, limiter les jointures inutiles et déplacer les calculs au bon niveau.
+---
+
+## Snowflake — modèle mental initial
+
+```text
+dbt
+= organisation / génération du SQL
+
+Snowflake
+= stockage + exécution du SQL
+```
+
+Le compute Snowflake doit être traité comme une ressource potentiellement payante.
+
+---
+
+## Documentation — principe d'amélioration continue
+
+Lorsqu'un comportement devient récurrent :
+
+- nouvelle commande réutilisable → `PLAYBOOK.md`
+- nouvelle routine de session → `SESSION_GUIDE.md`
+- nouvelle décision structurante → `DECISIONS.md`
+- nouvelle règle de sécurité → `SECURITY.md`
+- nouveau problème résolu → `LEARNINGS.md`
+- changement d'architecture → `PROJECT.md`
+- changement de progression → `ROADMAP.md`
+- changement d'état courant → `HANDOFF.md`
+
+La documentation doit évoluer uniquement lorsque la récurrence ou l'importance le justifie.
