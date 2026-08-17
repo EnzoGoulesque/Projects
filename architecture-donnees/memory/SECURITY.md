@@ -80,6 +80,7 @@ data/raw/
 # OS
 .DS_Store
 Thumbs.db
+*Zone.Identifier
 ```
 
 Cette liste doit évoluer avec les outils du projet.
@@ -147,3 +148,40 @@ Avant une opération susceptible de consommer :
 - vérifier les limites/budgets disponibles ;
 - travailler sur un faible volume ;
 - signaler explicitement le risque avant exécution.
+
+
+## Séparation des comptes Snowflake
+
+Le compte personnel du laboratoire et un éventuel compte professionnel sont des environnements distincts.
+
+Avant toute opération d'administration ou de compute :
+
+1. vérifier l'identifiant du compte actif dans Snowsight ;
+2. confirmer qu'il s'agit du compte personnel du projet ;
+3. vérifier le rôle actif ;
+4. vérifier le warehouse actif ou sélectionné.
+
+Ne jamais stocker dans Git un mot de passe, token, secret, clé privée ou credential issu de l'un ou l'autre compte.
+
+La mémoire peut documenter la règle de vérification, mais ne doit pas recopier un identifiant réel lorsque celui-ci n'est pas nécessaire à la compréhension du projet.
+
+## Données de test versionnées
+
+`data/sample/` est réservé aux datasets explicitement fictifs et publiables.
+
+Le fait qu'un CSV d'exemple soit versionné ne change pas l'interdiction concernant :
+- exports professionnels ;
+- données clients ;
+- données personnelles sensibles ;
+- datasets confidentiels.
+
+## Snowflake CLI — configuration locale
+
+Lorsque Snowflake CLI sera configuré dans WSL :
+
+- conserver la configuration et les credentials hors du repository ;
+- ne jamais copier un mot de passe, token, clé privée ou secret dans `memory/`, un script versionné ou un exemple de commande ;
+- privilégier les mécanismes d'authentification sûrs proposés par Snowflake ;
+- vérifier les permissions du fichier de configuration local ;
+- ne versionner qu'un éventuel exemple sans secret et avec placeholders ;
+- avant toute commande CLI qui déclenche du compute, appliquer la même barrière de sécurité que dans Snowsight : compte personnel, rôle, warehouse, taille, Resource Monitor et volume.

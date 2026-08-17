@@ -18,19 +18,23 @@
 - [x] Règles de sécurité définies
 - [x] Guide de session créé
 - [x] Bibliothèque de commandes structurée
-- [ ] Remplacer l'ancienne structure memory par cette version optimisée
-- [ ] Commit et push de la version optimisée
+- [x] Remplacer l'ancienne structure memory par cette version optimisée
+- [x] Commit et push de la version optimisée
 
 ## Phase 2 — Snowflake : fondamentaux
 
-- [ ] Préparer / vérifier le compte Snowflake
-- [ ] Comprendre account / user / role
+- [x] Préparer / vérifier le compte Snowflake
+- [x] Comprendre account / user / role
 - [ ] Comprendre database / schema / table / view
-- [ ] Comprendre warehouse / compute
-- [ ] Identifier les mécanismes de contrôle des coûts
-- [ ] Configurer les protections adaptées
-- [ ] Charger un petit CSV ou Parquet
-- [ ] Créer une première zone RAW
+- [x] Comprendre warehouse / compute
+- [x] Identifier les mécanismes de contrôle des coûts
+- [x] Configurer les protections adaptées
+- [x] Créer la database `ARCHITECTURE_DONNEES` et le schema `RAW`
+- [x] Créer le rôle projet `ARCHITECTURE_DONNEES_ROLE`
+- [x] Créer et sécuriser le warehouse `ARCHITECTURE_DONNEES_WH`
+- [x] Créer la structure de table `RAW.ORDERS`
+- [ ] Charger `orders.csv` et valider les 12 lignes
+- [ ] Finaliser la compréhension table / view à partir du dataset chargé
 
 ## Phase 3 — dbt : priorité principale
 
@@ -80,11 +84,16 @@
 
 ## Prochaine étape
 
-Commencer Snowflake par :
-1. le fonctionnement général ;
-2. les objets principaux ;
-3. le compute ;
-4. les coûts ;
-5. les protections anti-surcoût.
+Terminer la première ingestion Snowflake sans réutiliser le wizard Snowsight qui bloque :
 
-Aucun run Snowflake consommateur ne doit être effectué avant d'avoir validé ces points.
+1. vérifier que le compte actif est le compte personnel ;
+2. vérifier que `ARCHITECTURE_DONNEES_WH` est `SUSPENDED` ;
+3. installer et configurer Snowflake CLI dans WSL, hors Git pour les credentials ;
+4. charger `data/sample/orders.csv` via stage interne + `PUT` + `COPY INTO` ;
+5. confirmer exactement 12 lignes dans `ARCHITECTURE_DONNEES.RAW.ORDERS` ;
+6. suspendre le warehouse après contrôle ;
+7. clôturer la Phase 2 uniquement lorsque l'ingestion est validée.
+
+Ensuite, démarrer la Phase 3 dbt : environnement isolé, adaptateur Snowflake, connexion, `dbt debug`, initialisation et déclaration de la source RAW.
+
+**Coût :** signaler explicitement le risque avant `COPY INTO` et les requêtes de validation, car ces opérations peuvent démarrer / utiliser le warehouse.

@@ -59,3 +59,7 @@ nouvelle mémoire officielle
 Tout ce dossier doit être considéré comme **publiable**.
 
 Aucun secret, credential ou donnée professionnelle confidentielle ne doit y être stocké.
+
+## État de reprise actuel
+
+Pour reprendre le projet, lire d'abord `HANDOFF.md`. Au 2026-08-17, le socle Snowflake est prêt mais la première ingestion CSV n'est pas encore validée ; la prochaine tentative doit passer par Snowflake CLI depuis WSL plutôt que par le wizard Snowsight bloquant.

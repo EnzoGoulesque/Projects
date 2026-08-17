@@ -133,3 +133,54 @@ Tableau Desktop consomme les marts produits par dbt.
 
 **Pourquoi**  
 Un bon modèle Data doit être évalué par son utilité réelle pour la BI.
+
+---
+
+## 2026-08-17 — Rôle et warehouse Snowflake dédiés au projet
+
+**Contexte**  
+Le compte Snowflake contient des rôles système et des warehouses génériques qui ne doivent pas devenir le contexte de travail quotidien du laboratoire.
+
+**Décision**  
+Utiliser :
+- `ARCHITECTURE_DONNEES_ROLE` comme rôle de travail ;
+- `ARCHITECTURE_DONNEES_WH` comme warehouse du projet ;
+- `ARCHITECTURE_DONNEES` comme database ;
+- `RAW` comme première zone d'entrée.
+
+Le warehouse du projet démarre en X-Small / Gen1, avec auto-resume, auto-suspend à 300 secondes et timeout de requête à 600 secondes.
+
+**Pourquoi**  
+Isoler le projet, appliquer le moindre privilège et rendre le coût du compute lisible et contrôlable.
+
+**Impact**  
+`ACCOUNTADMIN` et les autres rôles système ne sont utilisés que lorsque leurs privilèges sont nécessaires. `COMPUTE_WH` n'est pas le warehouse de travail du projet.
+
+---
+
+## 2026-08-17 — Vérification du compte Snowflake actif comme barrière de sécurité
+
+**Contexte**  
+Un compte Snowflake professionnel distinct et le compte personnel peuvent être associés à la même adresse e-mail et apparaître dans le même sélecteur Snowsight.
+
+**Décision**  
+Avant toute modification ou opération susceptible d'utiliser du compute, vérifier l'identifiant du compte actif et confirmer qu'il s'agit du compte personnel du projet.
+
+**Pourquoi**  
+Éviter une manipulation accidentelle sur l'environnement professionnel.
+
+**Impact**  
+Cette vérification devient une étape obligatoire du workflow Snowflake. Aucun identifiant de compte réel n'est stocké dans la mémoire versionnée.
+
+---
+
+## 2026-08-17 — Dataset synthétique versionnable
+
+**Décision**  
+Conserver le petit dataset fictif `orders.csv` dans `data/sample/` afin de disposer d'une source reproductible et évolutive pour les exercices Snowflake, dbt et BI.
+
+**Pourquoi**  
+Pouvoir ajouter des colonnes, cas limites et nouvelles lignes de test sans dépendre de données professionnelles.
+
+**Impact**  
+`data/sample/` peut contenir des données explicitement fictives et publiables. Les données privées ou professionnelles restent interdites dans Git.

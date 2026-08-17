@@ -160,11 +160,11 @@ memory/SECURITY.md
 
 # Snowflake
 
-> Section à enrichir à mesure que les commandes réellement utilisées sont validées.
-
 ## Avant toute commande susceptible de consommer
 
 Vérifier :
+- identifiant du compte actif : compte personnel du projet ;
+- rôle actif ;
 - warehouse ;
 - taille ;
 - statut ;
@@ -172,7 +172,119 @@ Vérifier :
 - protection de coût ;
 - volume traité.
 
-Les commandes Snowflake seront ajoutées ici uniquement après validation dans le projet.
+Warehouse du projet :
+
+```text
+ARCHITECTURE_DONNEES_WH
+X-Small / Gen1
+auto-suspend = 300 s
+statement timeout = 600 s
+```
+
+Ne pas utiliser `COMPUTE_WH` par défaut pour ce projet.
+
+## Contexte de travail
+
+```sql
+USE ROLE ARCHITECTURE_DONNEES_ROLE;
+USE DATABASE ARCHITECTURE_DONNEES;
+USE SCHEMA RAW;
+USE WAREHOUSE ARCHITECTURE_DONNEES_WH;
+```
+
+`USE WAREHOUSE` sélectionne le warehouse ; une opération nécessitant du compute peut ensuite déclencher son auto-resume.
+
+## Vérifier le warehouse dédié
+
+```sql
+SHOW WAREHOUSES LIKE 'ARCHITECTURE_DONNEES_WH';
+```
+
+À contrôler notamment :
+- état `SUSPENDED` hors utilisation ;
+- taille X-Small ;
+- auto-suspend ;
+- auto-resume.
+
+## Suspendre explicitement après une courte session de compute
+
+```sql
+USE ROLE SYSADMIN;
+ALTER WAREHOUSE ARCHITECTURE_DONNEES_WH SUSPEND;
+SHOW WAREHOUSES LIKE 'ARCHITECTURE_DONNEES_WH';
+USE ROLE ARCHITECTURE_DONNEES_ROLE;
+```
+
+## Contrôle de la première table RAW
+
+Après validation du chargement :
+
+```sql
+USE ROLE ARCHITECTURE_DONNEES_ROLE;
+USE DATABASE ARCHITECTURE_DONNEES;
+USE SCHEMA RAW;
+USE WAREHOUSE ARCHITECTURE_DONNEES_WH;
+
+SELECT COUNT(*) AS NUMBER_OF_ROWS
+FROM ORDERS;
+
+SELECT *
+FROM ORDERS
+ORDER BY ORDER_ID;
+```
+
+Ces `SELECT` consomment du compute si le warehouse doit être repris. Signaler le risque avant exécution et suspendre ensuite le warehouse.
+
+## Diagnostiquer un chargement qui tarde
+
+Dans Snowsight :
+
+```text
+Monitoring
+  → Query History
+  → filtrer sur ARCHITECTURE_DONNEES_WH
+```
+
+Vérifier le statut avant toute nouvelle tentative. Utiliser `Copy History` si nécessaire pour confirmer l'activité de chargement.
+
+## Diagnostiquer le wizard `Load Data into Table`
+
+Si le wizard tourne indéfiniment :
+
+1. ne pas multiplier les clics `Load` / `Next` ;
+2. vérifier `Monitoring → Query History` ;
+3. confirmer que le rôle et le warehouse fonctionnent avec une petite requête directe ;
+4. vérifier si un `COPY INTO` a réellement été soumis ;
+5. si les tests SQL réussissent mais qu'aucun `COPY INTO` n'apparaît, considérer le problème comme situé avant la soumission du chargement et utiliser un autre chemin d'ingestion.
+
+Test de contexte déjà validé pour ce projet :
+
+```sql
+USE ROLE ARCHITECTURE_DONNEES_ROLE;
+USE WAREHOUSE ARCHITECTURE_DONNEES_WH;
+
+SELECT
+    CURRENT_ROLE(),
+    CURRENT_WAREHOUSE(),
+    1 AS TEST;
+```
+
+## Prochaine méthode d'ingestion à mettre en place
+
+Le prochain essai doit utiliser Snowflake CLI depuis WSL afin de charger directement le fichier versionné / local sans dépendre du wizard Snowsight.
+
+Installation prévue si `pipx` est disponible :
+
+```bash
+pipx install snowflake-cli
+snow --help
+```
+
+La procédure `stage interne → PUT → COPY INTO` sera ajoutée ici avec les commandes exactes **après validation réelle** lors de la prochaine session.
+
+Ne jamais ajouter de credentials réels au playbook.
+
+**Avertissement coût :** signaler explicitement le risque avant le futur `COPY INTO` et les requêtes de contrôle, car elles peuvent utiliser `ARCHITECTURE_DONNEES_WH`.
 
 ---
 
