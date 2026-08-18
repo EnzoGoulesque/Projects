@@ -269,47 +269,122 @@ SELECT
     1 AS TEST;
 ```
 
-## Prochaine méthode d'ingestion à mettre en place
+## État de la première ingestion
 
-Le prochain essai doit utiliser Snowflake CLI depuis WSL afin de charger directement le fichier versionné / local sans dépendre du wizard Snowsight.
+La première ingestion `orders.csv` a finalement réussi via Snowsight et `RAW.ORDERS` contient 12 lignes.
 
-Installation prévue si `pipx` est disponible :
+Snowflake CLI n'est donc pas une dépendance actuelle du projet. Ne l'ajouter que si un besoin futur concret justifie une méthode d'ingestion scriptée ou reproductible.
+
+---
+
+# Python / environnement dbt
+
+## Activer l'environnement du projet
+
+Depuis `~/projects/architecture-donnees` :
 
 ```bash
-pipx install snowflake-cli
-snow --help
+source .venv/bin/activate
 ```
 
-La procédure `stage interne → PUT → COPY INTO` sera ajoutée ici avec les commandes exactes **après validation réelle** lors de la prochaine session.
+Vérifier :
 
-Ne jamais ajouter de credentials réels au playbook.
+```bash
+python --version
+which python
+dbt --version
+```
 
-**Avertissement coût :** signaler explicitement le risque avant le futur `COPY INTO` et les requêtes de contrôle, car elles peuvent utiliser `ARCHITECTURE_DONNEES_WH`.
+Le Python actif doit pointer vers `.venv/bin/python`.
+
+## Recréer l'environnement sur une nouvelle machine
+
+Si le support `venv` manque sur Ubuntu 24.04 :
+
+```bash
+sudo apt update
+sudo apt install python3.12-venv
+```
+
+Puis :
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.lock.txt
+```
+
+`requirements.txt` documente la dépendance principale choisie. `requirements.lock.txt` permet de reconstruire l'état exact validé.
 
 ---
 
 # dbt
 
-> Section évolutive.
+## Configuration locale
 
-Commandes qui seront documentées lorsqu'elles auront été réellement installées et validées :
+Répertoire local :
+
+```bash
+mkdir -p ~/.dbt
+```
+
+Le futur fichier :
+
+```text
+~/.dbt/profiles.yml
+```
+
+reste hors Git et ne doit contenir aucun secret versionné.
+
+Projet dbt :
+
+```text
+dbt_project.yml
+profile: architecture_donnees
+models/staging
+models/intermediate
+models/marts
+```
+
+## Parsing local
+
+Une fois le profil local présent :
+
+```bash
+dbt parse
+```
+
+Le parsing sert à valider la structure et le code du projet. Ne pas confondre une erreur de profil local avec une erreur de connexion Snowflake.
+
+## Commandes connectées / potentiellement consommatrices
+
+À traiter comme potentiellement consommatrices côté Snowflake :
 
 ```text
 dbt debug
 dbt run
 dbt test
 dbt build
+```
+
+Avant exécution :
+- confirmer le compte personnel ;
+- confirmer `ARCHITECTURE_DONNEES_ROLE` ;
+- confirmer `ARCHITECTURE_DONNEES_WH` en X-Small ;
+- vérifier le Resource Monitor ;
+- vérifier le faible volume ;
+- signaler explicitement le risque de coût.
+
+Préparer le maximum localement, puis regrouper les commandes utiles dans une même session de compute. Après la séquence, suspendre explicitement le warehouse. Ne pas laisser le warehouse actif artificiellement pour « remplir » une minute.
+
+Commandes à documenter après validation réelle :
+
+```text
 dbt compile
 dbt docs generate
 dbt docs serve
 ```
-
-Pour chacune, documenter à terme :
-- objectif ;
-- contexte d'utilisation ;
-- impact Snowflake ;
-- risque de coût ;
-- exemple sûr.
 
 ---
 

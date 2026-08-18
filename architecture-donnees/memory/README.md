@@ -62,4 +62,4 @@ Aucun secret, credential ou donnée professionnelle confidentielle ne doit y êt
 
 ## État de reprise actuel
 
-Pour reprendre le projet, lire d'abord `HANDOFF.md`. Au 2026-08-17, le socle Snowflake est prêt mais la première ingestion CSV n'est pas encore validée ; la prochaine tentative doit passer par Snowflake CLI depuis WSL plutôt que par le wizard Snowsight bloquant.
+Pour reprendre le projet, lire d'abord `HANDOFF.md`. Au 2026-08-18, `RAW.ORDERS` contient les 12 lignes du dataset synthétique et le warehouse a été suspendu après validation. La Phase 3 dbt est démarrée : `.venv`, dbt Core, `dbt-snowflake`, `requirements.txt`, `requirements.lock.txt` et `dbt_project.yml` sont en place. La prochaine étape est de configurer `~/.dbt/profiles.yml` hors Git puis de valider la connexion Snowflake avec les contrôles de coût habituels.

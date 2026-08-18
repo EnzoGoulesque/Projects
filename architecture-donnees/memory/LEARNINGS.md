@@ -159,25 +159,26 @@ Ne pas relancer un chargement tant que son état n'est pas connu. Vérifier d'ab
 
 ---
 
-## Snowflake — wizard Snowsight bloqué avant `COPY INTO`
+## Snowflake — wizard Snowsight bloqué avant `COPY INTO`, puis ingestion réussie
 
 **Problème / découverte**  
-L'assistant `Load Data into Table` reste indéfiniment en chargement pour `orders.csv`. Le comportement persiste avec une nouvelle table comme avec une table existante.
+Lors d'une première session, l'assistant `Load Data into Table` est resté indéfiniment en chargement pour `orders.csv`. Le comportement persistait avec une nouvelle table comme avec une table existante.
 
-**Diagnostic validé**  
-Les requêtes SQL de contrôle fonctionnent :
+**Diagnostic validé à ce moment-là**  
+Les requêtes SQL de contrôle fonctionnaient :
 - création de `RAW.ORDERS` réussie ;
 - démarrage / suspension du warehouse réussis ;
 - `CURRENT_ROLE()` / `CURRENT_WAREHOUSE()` / `SELECT 1` réussis avec le rôle projet et le warehouse dédié.
 
-Query History ne montre cependant aucun `COPY INTO` issu du wizard. Le chargement semble donc bloquer avant la soumission du vrai SQL de copie.
+Query History ne montrait cependant aucun `COPY INTO` issu du wizard. Le chargement semblait donc bloquer avant la soumission du vrai SQL de copie.
 
-Snowsight affiche également `Failed to update the default warehouse` lorsqu'on tente de sélectionner le warehouse dédié dans le wizard. Changer le warehouse par défaut n'a pas résolu le problème.
+**Résolution observée le 2026-08-18**  
+Lors de la reprise, le même chemin Snowsight a finalement permis de charger `orders.csv`. La table `RAW.ORDERS` contient bien 12 lignes et le warehouse a été suspendu après validation.
+
+La cause exacte du blocage initial n'a pas été identifiée.
 
 **Règle**  
-Ne pas multiplier les tentatives du wizard lorsque SQL, rôle et warehouse ont déjà été validés. Passer à une méthode reproductible depuis WSL avec Snowflake CLI, stage interne, `PUT` puis `COPY INTO`.
-
-L'emplacement du CSV dans WSL n'est pas considéré comme cause démontrée à ce stade.
+Conserver Query History comme preuve de diagnostic et ne pas multiplier les clics lorsqu'un wizard semble bloqué. Ne pas transformer pour autant un incident ponctuel en décision architecturale permanente : Snowflake CLI n'est ajouté que si un besoin reproductible futur le justifie.
 
 ---
 
@@ -188,3 +189,52 @@ Lorsqu'un assistant graphique semble bloqué, Query History permet de distinguer
 
 **Règle**  
 Si aucune requête attendue (`COPY INTO`, DML, etc.) n'apparaît alors que les tests SQL directs réussissent, ne pas conclure immédiatement à un problème de warehouse ou de rôle. Documenter ce qui est réellement visible et choisir un autre chemin d'exécution si nécessaire.
+
+---
+
+## Ubuntu 24.04 — `venv` peut manquer malgré Python installé
+
+**Problème / découverte**  
+`python3 --version` retournait Python 3.12.3, mais `python3 -m venv .venv` échouait car `ensurepip` n'était pas disponible.
+
+**Cause / explication**  
+Sur Ubuntu, le support des environnements virtuels peut être fourni par un paquet séparé.
+
+**Solution / règle**  
+Installer le paquet correspondant puis recréer l'environnement incomplet :
+
+```bash
+sudo apt update
+sudo apt install python3.12-venv
+rm -rf .venv
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Vérifier ensuite `python --version` et `which python`.
+
+---
+
+## dbt — le répertoire de profil doit exister avant `dbt parse`
+
+**Problème / découverte**  
+Une première exécution de `dbt parse` a échoué avec une erreur indiquant que `~/.dbt` n'existait pas.
+
+**Solution / règle**  
+Créer le répertoire local avec :
+
+```bash
+mkdir -p ~/.dbt
+```
+
+La configuration `profiles.yml` doit ensuite rester dans ce répertoire, hors du repository. Cette erreur ne prouve pas un problème de connexion Snowflake : aucune connexion n'avait encore été configurée.
+
+---
+
+## Git — les dossiers vides ne sont pas suivis
+
+**Découverte**  
+Créer `models/staging`, `models/intermediate` et `models/marts` ne les fait pas apparaître dans `git status` tant qu'ils ne contiennent aucun fichier.
+
+**Règle**  
+Ne pas interpréter leur absence dans Git comme un échec de création. Ils seront versionnés naturellement lorsque les premiers fichiers dbt seront ajoutés.
