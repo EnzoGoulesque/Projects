@@ -1,6 +1,6 @@
 # Handoff — État actuel
 
-Dernière mise à jour : 2026-08-17.
+Dernière mise à jour : 2026-08-18.
 
 ## Projet
 
@@ -13,11 +13,11 @@ Construire un laboratoire :
 ```text
 CSV / Parquet
     ↓
-Snowflake
+Snowflake RAW
     ↓
 dbt
     ↓
-marts / sources BI
+staging / intermediate / marts
     ↓
 Tableau Desktop
 ```
@@ -30,19 +30,22 @@ Tableau Desktop
 - Git / GitHub / SSH
 - repository `Projects`
 - mémoire du projet simplifiée et versionnée
+- Python 3.12.3 dans Ubuntu
+- environnement Python local `.venv` créé pour le projet
+- `dbt-snowflake` installé dans `.venv`
 
-## Snowflake — socle validé
+## Snowflake — première ingestion validée
 
-Un compte Snowflake personnel de test est opérationnel.
+Le compte Snowflake personnel de test est opérationnel.
 
-Protections et organisation mises en place :
+Organisation du projet :
 
 ```text
 ARCHITECTURE_DONNEES_ROLE
         │
         ├── ARCHITECTURE_DONNEES
         │       └── RAW
-        │              └── ORDERS (structure créée, données non chargées)
+        │              └── ORDERS (12 lignes chargées)
         │
         └── ARCHITECTURE_DONNEES_WH
                 X-Small / Gen1
@@ -54,94 +57,81 @@ ARCHITECTURE_DONNEES_ROLE
 Éléments validés :
 
 - un Resource Monitor de niveau compte a été configuré avant les premiers usages de compute ;
-- `COMPUTE_WH` est suspendu et n'est pas le warehouse du projet ;
+- `COMPUTE_WH` n'est pas le warehouse du projet ;
 - `ARCHITECTURE_DONNEES_ROLE` est le rôle de travail du projet ;
-- le rôle projet est rattaché à `SYSADMIN` ;
 - la database `ARCHITECTURE_DONNEES` existe ;
 - le schema `RAW` existe ;
-- la table `ARCHITECTURE_DONNEES.RAW.ORDERS` a été créée manuellement ;
-- le warehouse dédié `ARCHITECTURE_DONNEES_WH` existe avec une configuration prudente ;
-- le rôle projet peut utiliser ce warehouse : le test `CURRENT_ROLE() / CURRENT_WAREHOUSE() / SELECT 1` a réussi ;
-- le warehouse a été remis à l'état `SUSPENDED` en fin de session ;
-- les commandes SQL sont exécutées dans Snowsight Workspaces.
+- la table `ARCHITECTURE_DONNEES.RAW.ORDERS` existe ;
+- `orders.csv` a finalement été chargé avec succès via Snowsight ;
+- la table contient exactement 12 lignes et les valeurs ont été contrôlées visuellement ;
+- le warehouse dédié `ARCHITECTURE_DONNEES_WH` a été suspendu manuellement après le chargement ;
+- le rôle projet et le warehouse avaient déjà été validés avec `CURRENT_ROLE() / CURRENT_WAREHOUSE() / SELECT 1`.
 
-## Donnée de test
+### Incident Snowsight — état final
 
-Un dataset synthétique `orders.csv` de 12 lignes a été créé pour le projet.
+Lors d'une session précédente, le wizard `Load Data into Table` restait bloqué avant qu'un `COPY INTO` soit visible dans Query History. Le diagnostic était cohérent avec un blocage dans le chemin du wizard plutôt qu'avec un défaut de table, rôle ou warehouse.
 
-Emplacement Git prévu / recommandé :
+Lors de la reprise du 2026-08-18, le chargement a finalement réussi via Snowsight. La cause exacte du blocage initial n'a pas été identifiée.
 
-```text
-data/sample/orders.csv
-```
+Conclusion durable : conserver Query History comme outil de diagnostic, mais ne plus considérer Snowflake CLI comme nécessaire pour cette première ingestion. Snowflake CLI reste une brique optionnelle à n'ajouter que si un besoin futur concret le justifie.
 
-Ce fichier est fictif et peut être versionné. Vérifier avec `git status` qu'il est bien au bon emplacement et qu'il s'agit uniquement du dataset synthétique avant publication.
+## dbt — état actuel
 
-Aucun export professionnel ou dataset privé ne doit être ajouté à sa place.
+La Phase 3 est démarrée.
 
-## Incident actuel — chargement CSV via Snowsight
-
-Le chargement de `orders.csv` dans :
+Environnement validé :
 
 ```text
-ARCHITECTURE_DONNEES.RAW.ORDERS
+Ubuntu 24.04
+└── projet architecture-donnees
+    └── .venv
+        ├── Python 3.12.3
+        ├── dbt Core 1.12.2
+        └── dbt-snowflake 1.12.0
 ```
 
-n'a **pas** abouti via l'assistant web Snowsight `Load Data into Table`.
+Travail réalisé :
 
-Constats validés :
+- le paquet Ubuntu `python3.12-venv` a été installé car il manquait initialement ;
+- `.venv` a été recréé proprement puis activé ;
+- `which python` pointe bien vers `.venv/bin/python` ;
+- `dbt-snowflake==1.12.0` est installé ;
+- `requirements.txt` fixe la dépendance principale ;
+- `requirements.lock.txt` conserve les versions exactes installées ;
+- `dbt_project.yml` a été créé à la racine du projet avec le profil `architecture_donnees` ;
+- la structure logique prévue est `models/staging`, `models/intermediate`, `models/marts` ;
+- les trois fichiers dbt/reproductibilité ont été commités et poussés ;
+- Git est revenu à un état propre ;
+- `~/.dbt` existe désormais hors du repository.
 
-- le wizard reste en chargement indéfini ;
-- le même comportement se produit pour la création depuis fichier et pour le chargement dans la table existante ;
-- le warehouse peut être démarré manuellement et fonctionne ;
-- `ARCHITECTURE_DONNEES_ROLE` peut exécuter du compute sur `ARCHITECTURE_DONNEES_WH` ;
-- `CREATE TABLE ... RAW.ORDERS` a réussi ;
-- Query History montre les requêtes SQL de diagnostic et de création comme `Success` ;
-- aucune opération `COPY INTO` correspondant au chargement du CSV n'apparaît dans Query History ;
-- Snowsight affiche aussi `Failed to update the default warehouse` lorsqu'on tente de sélectionner le warehouse dédié dans le wizard ;
-- modifier le warehouse par défaut n'a pas résolu le blocage.
-
-Conclusion de travail : le problème se situe vraisemblablement dans le chemin d'upload / wizard Snowsight avant la soumission du vrai chargement SQL, plutôt que dans la table, le rôle ou le fonctionnement du warehouse. L'emplacement WSL du CSV n'est pas démontré comme cause.
-
-Ne pas continuer à relancer le wizard au hasard lors de la prochaine session.
+Une première tentative de `dbt parse` a échoué uniquement parce que le répertoire `~/.dbt` n'existait pas encore. Ce répertoire a ensuite été créé. Aucun `profiles.yml` n'a encore été configuré et la connexion Snowflake dbt n'a donc pas encore été validée.
 
 ## Prochaine étape immédiate
 
-Contourner le wizard web et réaliser la première ingestion depuis WSL avec **Snowflake CLI** :
+Configurer la connexion dbt à Snowflake **hors Git** :
 
-1. vérifier que l'identifiant Snowflake actif correspond au compte personnel ;
-2. vérifier que `ARCHITECTURE_DONNEES_WH` est `SUSPENDED` avant de commencer ;
-3. installer Snowflake CLI dans WSL de manière isolée (`pipx` si disponible) ;
-4. configurer une connexion Snowflake hors du repository et sans secret versionné ;
-5. valider la connexion CLI ;
-6. utiliser un stage interne et envoyer `data/sample/orders.csv` depuis WSL ;
-7. lancer ensuite `COPY INTO ARCHITECTURE_DONNEES.RAW.ORDERS` ;
-8. vérifier que 12 lignes sont présentes ;
-9. contrôler quelques lignes ;
-10. suspendre explicitement le warehouse ;
-11. seulement après validation de l'ingestion, clôturer la Phase 2 Snowflake et démarrer dbt.
+1. vérifier que `.venv` est actif ;
+2. créer `~/.dbt/profiles.yml` avec une configuration sans secret versionné ;
+3. utiliser le compte personnel du laboratoire, le rôle `ARCHITECTURE_DONNEES_ROLE`, la database `ARCHITECTURE_DONNEES` et le warehouse `ARCHITECTURE_DONNEES_WH` ;
+4. protéger le fichier local de configuration ;
+5. relancer `dbt parse` ;
+6. préparer ensuite une session de connexion/compute cohérente ;
+7. avant `dbt debug` ou toute commande pouvant utiliser Snowflake, vérifier compte, rôle, warehouse, Resource Monitor et état du warehouse ;
+8. regrouper les commandes utiles dans une même fenêtre de compute puis suspendre explicitement le warehouse ;
+9. déclarer `RAW.ORDERS` comme source dbt ;
+10. créer le premier modèle `stg_orders`, puis les tests.
 
-### Avertissement coût pour la reprise
+## Avertissement coût pour la reprise
 
-L'installation du CLI, sa configuration, la création d'un stage interne et l'envoi local vers un stage ne doivent pas être traités comme du compute de warehouse.
+La création ou modification locale de `~/.dbt/profiles.yml`, `dbt_project.yml`, YAML ou SQL ne consomme pas de compute Snowflake.
 
-En revanche, **avant `COPY INTO`, tout `SELECT` de validation ou toute autre opération nécessitant le warehouse, signaler explicitement le risque de coût**, vérifier le compte personnel, le warehouse X-Small, le Resource Monitor et l'état du warehouse.
+En revanche, **traiter `dbt debug`, `dbt run`, `dbt test`, `dbt build` et toute requête de validation comme potentiellement consommatrices**. Avant ces commandes, signaler explicitement le risque, vérifier le compte personnel, le warehouse X-Small, le Resource Monitor et le faible volume.
 
-## Étape suivante après l'ingestion
-
-Démarrer la Phase 3 **dbt** :
-
-- environnement Python isolé ;
-- adaptateur Snowflake ;
-- connexion sécurisée ;
-- `dbt debug` ;
-- initialisation du projet ;
-- déclaration de `RAW.ORDERS` comme source ;
-- puis modèles staging, intermediate et marts.
+Pour limiter les reprises facturées, préférer une session cohérente : préparer localement d'abord, démarrer le compute une fois, enchaîner les vérifications utiles, puis suspendre. Ne pas maintenir le warehouse actif artificiellement lorsqu'il n'y a plus de travail utile.
 
 ## Barrière de sécurité Snowflake
 
-Un compte Snowflake professionnel existe séparément avec la même adresse e-mail que le compte personnel.
+Un compte Snowflake professionnel existe séparément du compte personnel.
 
 Règle durable : **avant toute modification ou opération de compute, vérifier explicitement que l'identifiant du compte actif est celui du compte personnel du projet**.
 
@@ -156,6 +146,8 @@ Ne jamais copier dans la mémoire :
 
 - Aucun secret dans Git.
 - Aucun dataset professionnel/confidentiel dans GitHub.
+- `~/.dbt/profiles.yml` reste local et hors repository.
+- `.venv/`, `target/`, `logs/` et `dbt_packages/` restent hors Git.
 - Signaler explicitement les risques de coût Snowflake avant une action consommatrice.
 - Utiliser le warehouse dédié du projet, pas `COMPUTE_WH`.
 - Garder les volumes de test très faibles.

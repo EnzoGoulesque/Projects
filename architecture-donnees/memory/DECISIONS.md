@@ -184,3 +184,51 @@ Pouvoir ajouter des colonnes, cas limites et nouvelles lignes de test sans dépe
 
 **Impact**  
 `data/sample/` peut contenir des données explicitement fictives et publiables. Les données privées ou professionnelles restent interdites dans Git.
+
+---
+
+## 2026-08-18 — Environnement dbt isolé et reproductible dans WSL
+
+**Contexte**  
+Le projet doit rester stable dans Ubuntu sans polluer le Python système ni introduire une couche supplémentaire sans besoin concret.
+
+**Décision**  
+Utiliser le Python 3.12 fourni par Ubuntu uniquement comme base, puis créer un environnement `.venv` propre au projet. Installer `dbt-snowflake` dans cet environnement et versionner :
+- `requirements.txt` pour la dépendance principale choisie ;
+- `requirements.lock.txt` pour les versions exactes réellement installées.
+
+Version de départ validée :
+- Python 3.12.3 ;
+- dbt Core 1.12.2 ;
+- dbt-snowflake 1.12.0.
+
+**Pourquoi**  
+Obtenir une installation simple, isolée et reconstruisible sans ajouter Docker, Conda, Poetry ou `uv` alors qu'aucun besoin actuel ne le justifie.
+
+**Impact**  
+`.venv/` reste local et ignoré par Git. Les fichiers de dépendances sont versionnés. Sur une nouvelle machine, l'environnement peut être recréé à partir des fichiers du projet.
+
+---
+
+## 2026-08-18 — Projet dbt à la racine du projet Architecture de données
+
+**Contexte**  
+Le repository contient actuellement un seul laboratoire Data et dbt en est la couche centrale de transformation.
+
+**Décision**  
+Placer `dbt_project.yml` à la racine de `architecture-donnees` et organiser les modèles sous :
+
+```text
+models/
+├── staging/
+├── intermediate/
+└── marts/
+```
+
+Le profil dbt se nomme `architecture_donnees` et sa configuration locale restera dans `~/.dbt/profiles.yml`, hors du repository.
+
+**Pourquoi**  
+Éviter un sous-projet dbt artificiel et garder une lecture simple du flux complet données → Snowflake → dbt → BI.
+
+**Impact**  
+Le dépôt reste mono-projet pour l'instant. Si plusieurs projets dbt apparaissent plus tard, cette décision pourra être réévaluée explicitement.

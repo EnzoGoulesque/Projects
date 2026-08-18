@@ -175,13 +175,33 @@ Le fait qu'un CSV d'exemple soit versionné ne change pas l'interdiction concern
 - données personnelles sensibles ;
 - datasets confidentiels.
 
-## Snowflake CLI — configuration locale
+## dbt — profil local et credentials
 
-Lorsque Snowflake CLI sera configuré dans WSL :
+La configuration de connexion dbt doit vivre dans :
 
-- conserver la configuration et les credentials hors du repository ;
-- ne jamais copier un mot de passe, token, clé privée ou secret dans `memory/`, un script versionné ou un exemple de commande ;
+```text
+~/.dbt/profiles.yml
+```
+
+Ce fichier est **hors du repository** et ne doit jamais être copié dans `memory/` avec des valeurs réelles.
+
+Règles :
+- ne jamais versionner un mot de passe, token, clé privée ou secret Snowflake ;
+- conserver `profiles.yml` hors Git même si une règle `.gitignore` existe ;
+- privilégier les variables d'environnement ou mécanismes d'authentification sûrs lorsqu'ils sont adaptés ;
+- limiter les permissions du fichier local lorsque le profil sera créé ;
+- ne versionner qu'un éventuel exemple avec placeholders ;
+- ne jamais recopier dans une conversation ou dans la mémoire un credential réel ;
+- avant `dbt debug`, `dbt run`, `dbt test`, `dbt build` ou toute commande pouvant utiliser Snowflake, appliquer la barrière compte personnel / rôle / warehouse / Resource Monitor / volume.
+
+Les fichiers `requirements.txt`, `requirements.lock.txt` et `dbt_project.yml` sont publiables tant qu'ils ne contiennent aucun secret. `.venv/`, `target/`, `logs/` et `dbt_packages/` doivent rester hors Git.
+
+## Snowflake CLI — si ajouté plus tard
+
+Snowflake CLI n'est pas nécessaire à l'état actuel du projet. S'il devient utile plus tard :
+
+- évaluer d'abord son impact architectural ;
+- conserver configuration et credentials hors du repository ;
+- ne jamais copier un secret dans `memory/`, un script versionné ou un exemple de commande ;
 - privilégier les mécanismes d'authentification sûrs proposés par Snowflake ;
-- vérifier les permissions du fichier de configuration local ;
-- ne versionner qu'un éventuel exemple sans secret et avec placeholders ;
-- avant toute commande CLI qui déclenche du compute, appliquer la même barrière de sécurité que dans Snowsight : compte personnel, rôle, warehouse, taille, Resource Monitor et volume.
+- appliquer la même barrière de sécurité et de coût que dans Snowsight et dbt.

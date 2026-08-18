@@ -33,16 +33,18 @@
 - [x] Créer le rôle projet `ARCHITECTURE_DONNEES_ROLE`
 - [x] Créer et sécuriser le warehouse `ARCHITECTURE_DONNEES_WH`
 - [x] Créer la structure de table `RAW.ORDERS`
-- [ ] Charger `orders.csv` et valider les 12 lignes
+- [x] Charger `orders.csv` et valider les 12 lignes
 - [ ] Finaliser la compréhension table / view à partir du dataset chargé
+
+> L'objectif pratique d'ingestion RAW est validé. La compréhension `table / view` reste un point pédagogique à clôturer ; elle ne bloque pas le démarrage de dbt.
 
 ## Phase 3 — dbt : priorité principale
 
-- [ ] Créer un environnement isolé pour dbt
-- [ ] Installer l'adaptateur Snowflake
+- [x] Créer un environnement isolé pour dbt
+- [x] Installer l'adaptateur Snowflake
 - [ ] Configurer la connexion Snowflake
 - [ ] Valider la connexion
-- [ ] Initialiser le projet dbt
+- [x] Initialiser le projet dbt
 - [ ] Déclarer les sources
 - [ ] Créer les modèles staging
 - [ ] Créer les modèles intermediate
@@ -84,16 +86,16 @@
 
 ## Prochaine étape
 
-Terminer la première ingestion Snowflake sans réutiliser le wizard Snowsight qui bloque :
+Continuer la Phase 3 dbt sans lancer inutilement le compute Snowflake :
 
-1. vérifier que le compte actif est le compte personnel ;
-2. vérifier que `ARCHITECTURE_DONNEES_WH` est `SUSPENDED` ;
-3. installer et configurer Snowflake CLI dans WSL, hors Git pour les credentials ;
-4. charger `data/sample/orders.csv` via stage interne + `PUT` + `COPY INTO` ;
-5. confirmer exactement 12 lignes dans `ARCHITECTURE_DONNEES.RAW.ORDERS` ;
-6. suspendre le warehouse après contrôle ;
-7. clôturer la Phase 2 uniquement lorsque l'ingestion est validée.
+1. activer `.venv` ;
+2. créer et sécuriser `~/.dbt/profiles.yml` hors Git ;
+3. configurer le profil `architecture_donnees` avec le compte personnel, le rôle projet, la database et le warehouse dédiés ;
+4. relancer `dbt parse` ;
+5. préparer la source `RAW.ORDERS` et le premier modèle staging localement ;
+6. avant la première commande connectée/consommatrice, vérifier compte personnel, rôle, warehouse X-Small, Resource Monitor et état `SUSPENDED` ;
+7. lancer une séquence courte et cohérente de validation (`dbt debug`, puis commandes utiles) ;
+8. suspendre explicitement le warehouse après la session ;
+9. valider ensuite `stg_orders` et ses premiers tests.
 
-Ensuite, démarrer la Phase 3 dbt : environnement isolé, adaptateur Snowflake, connexion, `dbt debug`, initialisation et déclaration de la source RAW.
-
-**Coût :** signaler explicitement le risque avant `COPY INTO` et les requêtes de validation, car ces opérations peuvent démarrer / utiliser le warehouse.
+**Coût :** les fichiers dbt locaux ne consomment pas de compute Snowflake. Signaler explicitement le risque avant `dbt debug`, `dbt run`, `dbt test`, `dbt build` ou toute requête de contrôle pouvant reprendre le warehouse.
